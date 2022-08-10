@@ -1,10 +1,12 @@
-import { Color, Fog, Mesh, PerspectiveCamera, Scene, TorusKnotBufferGeometry } from 'three'
+import { Color, Fog, Mesh, MeshNormalMaterial, PerspectiveCamera, Scene, TorusKnotBufferGeometry } from 'three'
 import { BasicMaterial } from '../materials'
 import store from '../store'
 import { E } from '../utils'
 import GlobalEvents from '../utils/GlobalEvents'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
+import { CopyShader } from 'three/examples/jsm/shaders/CopyShader'
 
 export default class SpaceScene extends Scene {
 	constructor() {
@@ -15,7 +17,10 @@ export default class SpaceScene extends Scene {
 		renderPass.clear = false
 		renderPass.clearDepth = true
 		renderPass.enabled = true
-		store.WebGL.composerPasses.add(renderPass, 2)
+		store.WebGL.composerPasses.add(renderPass, 3)
+
+		const copyPass = new ShaderPass(CopyShader)
+		store.WebGL.composerPasses.add(copyPass, 4)
 
 		E.on('App:start', () => {
 			this.build()
@@ -28,7 +33,7 @@ export default class SpaceScene extends Scene {
 	build() {
 		this.torus = new Mesh(
 			new TorusKnotBufferGeometry(1, 0.4, 132, 16),
-			new BasicMaterial()
+			new MeshNormalMaterial()
 		)
 
 		this.add(this.torus)

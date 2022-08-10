@@ -1,4 +1,4 @@
-import { Color, Fog, Mesh, PerspectiveCamera, Scene, TorusKnotBufferGeometry, BufferGeometry, BufferAttribute, PointsMaterial, Points } from 'three'
+import { Color, Fog, Mesh, PerspectiveCamera, Scene, TorusKnotBufferGeometry, BufferGeometry, BufferAttribute, PointsMaterial, Points, SrcAlphaFactor, OneMinusSrcAlphaFactor, AddEquation } from 'three'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass.js';
@@ -9,6 +9,8 @@ import { E } from '../utils'
 import GlobalEvents from '../utils/GlobalEvents'
 import gsap from 'gsap'
 import { Gui } from '../utils/Gui'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
+import { CopyShader } from 'three/examples/jsm/shaders/CopyShader'
 
 export default class MainScene extends Scene {
 	constructor() {
@@ -42,7 +44,7 @@ export default class MainScene extends Scene {
 			const afterimagePass = new AfterimagePass()
 			afterimagePass.uniforms['damp'].value = 0.9
 			// afterimagePass.renderToScreen = false
-			store.WebGL.composerPasses.add(afterimagePass, 3)
+			store.WebGL.composerPasses.add(afterimagePass, 2)
 
 		})
 	}

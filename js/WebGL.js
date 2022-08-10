@@ -59,7 +59,7 @@ export default class WebGL {
 		this.clockDelta = this.clock.getDelta()
 		this.globalUniforms.uDelta.value = this.clockDelta > 0.016 ? 0.016 : this.clockDelta
 		this.globalUniforms.uTime.value = time
-		console.log(this.composer)
+		// console.log(this.composer)
 		this.composer.render()
 	}
 
