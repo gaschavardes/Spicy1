@@ -1,4 +1,4 @@
-import { ClampToEdgeWrapping, Clock, LinearFilter, LinearMipmapLinearFilter, Texture, WebGLRenderer, Color, MirroredRepeatWrapping, PerspectiveCamera } from 'three'
+import { ClampToEdgeWrapping, Clock, LinearFilter, LinearMipmapLinearFilter, Texture, WebGLRenderer, Color, MirroredRepeatWrapping, PerspectiveCamera, AnimationMixer, AnimationClip} from 'three'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import store from './store'
 import { E, qs } from './utils'
@@ -19,6 +19,17 @@ export default class WebGL {
 		this.camera = new PerspectiveCamera(45, store.window.w / store.window.h, 0.1, 50)
 		this.camera.position.z = 10
 		store.camera = this.camera
+
+		// store.AssetLoader.loadGltf((`models/camera2.glb`)).then(gltf => {
+		// 	store.camera = gltf.cameras[0]
+		// 	console.log(gltf)
+		// 	const clip = AnimationClip.findByName( gltf.animations, 'Action' )  //get the animation name by console.log(gltf.animations)
+		// 	this.mixer = new AnimationMixer(store.camera)
+		// 	this.action = this.mixer.clipAction(clip)
+		// 	console.log(clip, this.action)
+
+		// 	this.action.play()
+		// })
 
 		// this.starRenderer = new WebGLRenderer({ alpha: true, antialias: true, canvas: this.dom.canvas, powerPreference: 'high-performance', stencil: false })
 		// this.starRenderer.clearAlpha = 0
@@ -57,10 +68,18 @@ export default class WebGL {
 
 	onRaf = (time) => {
 		this.clockDelta = this.clock.getDelta()
+	
+
+		// if(this.mixer !== null){
+		// 				this.mixer.update(this.clockDelta)
+		// }
 		this.globalUniforms.uDelta.value = this.clockDelta > 0.016 ? 0.016 : this.clockDelta
 		this.globalUniforms.uTime.value = time
 		// console.log(this.composer)
+		// store.camera.position.needsUpdate = true
+		store.camera.updateProjectionMatrix()
 		this.composer.render()
+		// console.log(store.camera.position, this.action)
 	}
 
 	onResize = () => {

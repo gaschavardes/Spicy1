@@ -1,27 +1,37 @@
 import store from '../store'
 import { E } from './'
-
+import { TextureLoader } from 'three/src/Three'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-import { TextureLoader } from 'three'
-
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
 /**
 *   Add any promises that need to be resolved before showing
 *   the page by using the add( promise ) method.
 */
 
 export default class AssetLoader {
-	constructor(progressEventName = 'AssetsProgress') {
+	constructor({
+		name = 'AssetLoader',
+		progressEventName = 'AssetsProgress'
+	} = {}) {
 		this.promisesToLoad = []
 		this.fontsLoaded = false
 		this.loaded = false
+		this.name = name
 		this.progressEventName = progressEventName
 
 		this.jsons = {}
 		this.gltfs = {}
 		this.textures = {}
+		this.ktxTextures = {}
 
 		this.textureLoader = new TextureLoader()
+		this.ktxLoader = new KTX2Loader()
+		this.ktxLoader.setTranscoderPath(`${store.assetsUrl}basis/`)
 		this.gltfLoader = new GLTFLoader()
+		this.dracoLoader = new DRACOLoader()
+		this.dracoLoader.setDecoderPath(`${store.assetsUrl}draco/`)
+		this.gltfLoader.setDRACOLoader(this.dracoLoader)
 	}
 
 	load = ({ element = document.body, progress = true } = {}) => {
@@ -45,7 +55,9 @@ export default class AssetLoader {
 		this.loaded = new Promise(resolve => {
 			Promise.all(this.promisesToLoad).then(() => {
 				this.reset()
+				E.emit(`${this.name}:beforeResolve`)
 				resolve()
+				E.emit(`${this.name}:afterResolve`)
 			})
 		})
 
@@ -62,25 +74,28 @@ export default class AssetLoader {
 	}
 
 	addMedia = () => {
-		const images = this.element.querySelectorAll('img')
+		const images = this.element.querySelectorAll('img:not([lazy="full"])')
 		for (let i = 0; i < images.length; i++) {
 			this.addImage(images[i])
 		}
 
-		const videos = this.element.querySelectorAll('video:not([lazy])')
+		const videos = this.element.querySelectorAll('video')
 		for (let i = 0; i < videos.length; i++) {
 			this.add(new Promise(resolve => {
+				const muted = videos[i].muted
+				videos[i].muted = true
 				videos[i].crossOrigin = ''
-				videos[i].addEventListener('canplaythrough', function playthrough() {
-					videos[i].removeEventListener('canplaythrough', playthrough)
-
-					videos[i].addEventListener('timeupdate', function ready() {
-						videos[i].removeEventListener('timeupdate', ready)
+				videos[i].addEventListener('loadeddata', () => {
+					videos[i].addEventListener('timeupdate', () => {
 						videos[i].pause()
 						resolve()
-					})
-				})
+						videos[i].currentTime = 0
+						videos[i].muted = muted
+					}, { once: true })
+				}, { once: true })
 				videos[i].addEventListener('error', resolve)
+				// low-power mode on iOS won't allow autoplaying videos so just resolve the promise
+				store.isIOS && videos[i].addEventListener('suspend', resolve)
 				if (videos[i].src === '' && videos[i].dataset.src) {
 					videos[i].src = videos[i].dataset.src
 				}
@@ -156,12 +171,24 @@ export default class AssetLoader {
 		if (!this.textures[url]) {
 			this.textures[url] = this.add(new Promise((resolve, reject) => {
 				this.textureLoader.load(url, texture => {
-					resolve(store.WebGL.generateTexture(texture, options))
-				}, undefined, reject)
+					resolve(store.Gl.generateTexture(texture, options))
+				}, undefined, resolve)
 			}))
 		}
 
 		return this.textures[url]
+	}
+
+	loadKtxTexture(url, options) {
+		if (!this.ktxTextures[url]) {
+			this.ktxTextures[url] = this.add(new Promise((resolve, reject) => {
+				this.ktxLoader.load(url, texture => {
+					resolve(store.Gl.generateTexture(texture, options, true))
+				}, undefined, resolve)
+			}))
+		}
+
+		return this.ktxTextures[url]
 	}
 
 	reset = () => {

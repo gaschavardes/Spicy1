@@ -134,7 +134,7 @@ export default class MainScene extends Scene {
 
 		this.points.geometry.attributes.position.needsUpdate = true
 		this.points.geometry.attributes.color.needsUpdate = true
-		
+		this.points.position.set(0, 0, store.camera.position.z - 15)
 		store.camera.rotation.set(0, 0, this.dampedProgressCamera * 1.5)
 	}
 
